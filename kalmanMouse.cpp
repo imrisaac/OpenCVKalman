@@ -5,7 +5,7 @@
 #include <chrono>
 #include <iomanip>
  
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
  
@@ -198,10 +198,9 @@ int main (int argc, char * const argv[]) {
             cv::Point measPt(measurement(0),measurement(1));
             measurmens.push_back(measPt);
  
- 
             cv::Mat estimated = KF.correct(measurement);
             cv::Point statePt(estimated.at<float>(0),estimated.at<float>(1));
-			kalmanv.push_back(statePt);
+			      kalmanv.push_back(statePt);
  
             std::cout<<"My State Posterior:" <<std::endl;
             std::cout<<KF.statePre+KF.gain*(measurement-KF.measurementMatrix*KF.statePre) <<std::endl;
@@ -221,14 +220,16 @@ int main (int argc, char * const argv[]) {
             img = cv::Scalar::all(0);
             drawCross( statePt, cv::Scalar(255,255,255), 5 );
             drawCross( measPt, cv::Scalar(0,0,255), 5 );
+
+
             for (std::size_t i = 0; i < groundTruth.size()-1; i++)
             {
                 line(img, groundTruth[i], groundTruth[i+1], cv::Scalar(0,255,0), 1);
-			}
+			      }
             for (std::size_t i = 0; i < kalmanv.size()-1; i++)
             {
                 line(img, kalmanv[i], kalmanv[i+1], cv::Scalar(255,0,0), 1);
-			}
+			      }
             for (std::size_t i = 0; i < measurmens.size()-1; i++)
             {
                 line(img, measurmens[i], measurmens[i+1], cv::Scalar(0,255,255), 1);
