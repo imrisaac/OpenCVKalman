@@ -50,10 +50,8 @@ Eigen::MatrixXd multivariateNormalDistribution(){
   int size = 2; // Dimensionality (rows)
   int nn=1;     // How many samples (columns) to draw
   Eigen::internal::scalar_normal_dist_op<double> randN; // Gaussian functor
-  //Eigen::internal::scalar_normal_dist_op<double>::rng.seed(1);
   auto elapsed = std::chrono::high_resolution_clock::now() - start;
   auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-  //std::cout<<"microseconds:" <<microseconds <<std::endl;
   Eigen::internal::scalar_normal_dist_op<double>::rng.seed(microseconds);
   Eigen::VectorXd mean(size);
   Eigen::MatrixXd covar(size,size);
@@ -252,15 +250,14 @@ int main (int argc, char * const argv[]) {
   }
 
   groundTruthfile.close();
-
   std::ofstream kalmanvfile("kalmanv.csv",std::ofstream::ate );
   kalmanvfile<<"x,y"<<std::endl;
 
   for (std::size_t i = 0; i < kalmanv.size()-1; i++){
     kalmanvfile<<kalmanv[i].x << ","<<kalmanv[i].y <<std::endl;
   }
-  kalmanvfile.close();
 
+  kalmanvfile.close();
   std::ofstream measurmensfile("measurmens.csv",std::ofstream::ate );
   measurmensfile<<"x,y"<<std::endl;
 
