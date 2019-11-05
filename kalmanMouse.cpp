@@ -5,7 +5,7 @@
 #include <chrono>
 #include <iomanip>
  
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
  
