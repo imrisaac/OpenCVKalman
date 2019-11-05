@@ -112,7 +112,7 @@ int main (int argc, char * const argv[]) {
   cv::Mat_<float> state(4, 1); // (x, y, Vx, Vy) 
   cv::Mat processNoise(4, 1, CV_32F);
   cv::Mat_<float> measurement(2,1); measurement.setTo(cv::Scalar(0));
-  char code = char(-1);
+  char code = (char)-1;
 
   cv::namedWindow("Mouse Tracking with Kalman Filter");
   cv::setMouseCallback("Mouse Tracking with Kalman Filter", on_mouse, nullptr);
@@ -229,18 +229,19 @@ int main (int argc, char * const argv[]) {
       cv::putText(img,"Real Mouse Position(ground truth)",cv::Point(10,25),cv::FONT_HERSHEY_PLAIN,1,cv::Scalar(0,255,0));
       cv::putText(img,"Kalman Sate",cv::Point(10,35),cv::FONT_HERSHEY_PLAIN,1,cv::Scalar(255,0,0));
       imshow( "Mouse Tracking with Kalman Filter", img );
-      code = char(cv::waitKey(1000.0*delta_t));
+      code = (char)cv::waitKey(1000.0*delta_t);
 
-      if( code > 0 ){
+      if( code == 27 || code == 'q' || code == 'Q' ){
         break;
       }
+
     }
 
     if( code == 27 || code == 'q' || code == 'Q' ){
       break;
     }
+    
   }
-
 
   std::ofstream groundTruthfile("groundTruth.csv",std::ofstream::ate );
   groundTruthfile<<"x,y"<<std::endl;
