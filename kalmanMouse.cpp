@@ -109,11 +109,9 @@ void on_mouse(int event, int x, int y, int flags, void* param) {
 }
  
 // plot points
-#define drawCross( center, color, d )                                 \
-cv::line( img, cv::Point( center.x - d, center.y - d ),                \
-cv::Point( center.x + d, center.y + d ), color, 2, CV_AA, 0); \
-cv::line( img, cv::Point( center.x + d, center.y - d ),                \
-cv::Point( center.x - d, center.y + d ), color, 2, CV_AA, 0 )
+#define drawCross( center, color, d );         
+cv::line( img, cv::Point( center.x - d, center.y - d ), cv::Point( center.x + d, center.y + d ), color, 2, CV_AA, 0); 
+cv::line( img, cv::Point( center.x + d, center.y - d ), cv::Point( center.x - d, center.y + d ), color, 2, CV_AA, 0);
  
  
 int main (int argc, char * const argv[]) {
