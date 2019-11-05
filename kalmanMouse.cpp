@@ -130,11 +130,11 @@ int main (int argc, char * const argv[]) {
 	
     for(;;)
     {
-		if (mouse_info.x < 0 || mouse_info.y < 0) {
-            imshow("Mouse Tracking with Kalman Filter", img);
-            cv::waitKey(30);
-			continue;
-		}
+      if (mouse_info.x < 0 || mouse_info.y < 0) {
+              imshow("Mouse Tracking with Kalman Filter", img);
+              cv::waitKey(30);
+        continue;
+      }
         cv::Mat transitionMatrix=(cv::Mat_<float>(4, 4) << 1,0,delta_t,0,   0,1,0,delta_t,  0,0,1,0,  0,0,0,1);
         KF.transitionMatrix = transitionMatrix;
 		
@@ -146,7 +146,7 @@ int main (int argc, char * const argv[]) {
  
         measurmens.clear();
         groundTruth.clear();
-		kalmanv.clear();
+		    kalmanv.clear();
         std::cout<< "measurementMatrix"<<std::endl;
         std::cout<<KF.measurementMatrix<<std::endl;
 		

@@ -31,8 +31,8 @@ int main(int, char**)
   Mat processNoise(2, 1, CV_32F);
   Mat measurement = Mat::zeros(1, 1, CV_32F);
   char code = (char)-1;
-  for(;;)
-  {
+
+  for(;;){
     randn( state, Scalar::all(0), Scalar::all(0.1) );
     KF.transitionMatrix = (Mat_<float>(2, 2) << 1, 1, 0, 1);
     setIdentity(KF.measurementMatrix);
@@ -40,8 +40,7 @@ int main(int, char**)
     setIdentity(KF.measurementNoiseCov, Scalar::all(1e-1));
     setIdentity(KF.errorCovPost, Scalar::all(1));
     randn(KF.statePost, Scalar::all(0), Scalar::all(0.1));
-    for(;;)
-    {
+    for(;;){
       Point2f center(img.cols*0.5f, img.rows*0.5f);
       float R = img.cols/3.f;
       double stateAngle = state.at<float>(0);
@@ -55,7 +54,7 @@ int main(int, char**)
       measurement += KF.measurementMatrix*state;
       double measAngle = measurement.at<float>(0);
       Point measPt = calcPoint(center, R, measAngle);
-      
+
       // plot points
       #define drawCross( center, color, d )                                        \
           line( img, Point( center.x - d, center.y - d ),                          \
