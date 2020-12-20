@@ -85,19 +85,17 @@ struct mouse_info_struct { int x,y; };
 struct mouse_info_struct mouse_info = {-1,-1}, last_mouse;
  
 void on_mouse(int event, int x, int y, int flags, void* param) {
-	{
-		last_mouse = mouse_info;
-		mouse_info.x = x;
-		mouse_info.y = y;
-	}
+  last_mouse = mouse_info;
+  mouse_info.x = x;
+  mouse_info.y = y;
 }
  
 // plot points
 #define drawCross( center, color, d )                                 \
 cv::line( img, cv::Point( center.x - d, center.y - d ),                \
-cv::Point( center.x + d, center.y + d ), color, 2, CV_AA, 0); \
+cv::Point( center.x + d, center.y + d ), color, 2, cv::LINE_AA, 0); \
 cv::line( img, cv::Point( center.x + d, center.y - d ),                \
-cv::Point( center.x - d, center.y + d ), color, 2, CV_AA, 0 )
+cv::Point( center.x - d, center.y + d ), color, 2, cv::LINE_AA, 0 )
  
  
 int main (int argc, char * const argv[]) {
@@ -113,14 +111,15 @@ int main (int argc, char * const argv[]) {
   cv::Mat processNoise(4, 1, CV_32F);
   cv::Mat_<float> measurement(2,1); measurement.setTo(cv::Scalar(0));
   char code = (char)-1;
+  int i = 9;
 
-  cv::namedWindow("Mouse Tracking with Kalman Filter");
-  cv::setMouseCallback("Mouse Tracking with Kalman Filter", on_mouse, nullptr);
+  cv::namedWindow("Mouse Tracker with Kalman Filter");
+  cv::setMouseCallback("Mouse Tracker with Kalman Filter", on_mouse, nullptr);
   double delta_t=1/20.0;
 
   for(;;){
     if (mouse_info.x < 0 || mouse_info.y < 0) {
-      imshow("Mouse Tracking with Kalman Filter", img);
+      imshow("Mouse Tracker with Kalman Filter", img);
       cv::waitKey(30);
       continue;
     }
@@ -140,74 +139,44 @@ int main (int argc, char * const argv[]) {
     std::cout<< "measurementMatrix"<<std::endl;
     std::cout<<KF.measurementMatrix<<std::endl;
 
+    cv::Point statePt = cv::Point(0, 0);
+    cv::Point measPt = cv::Point(0, 0);
+    cv::Mat estimated;
+
     for(;;){
-      std::cout<< "processNoiseCov"<<std::endl;
-      std::cout<< KF.processNoiseCov<<std::endl;
-
-      std::cout<< "measurementNoiseCov"<<std::endl;
-      std::cout<< KF.measurementNoiseCov<<std::endl;
-
-      std::cout<<"State Prior (before calling predict function):" <<std::endl;
-      std::cout<<KF.statePre <<std::endl;
-
-      std::cout<<"Cov Prior (before calling predict function):" <<std::endl;
-      std::cout<<KF.errorCovPre <<std::endl;
-
-      std::cout<<"Cov Posterior (before calling predict function):" <<std::endl;
-      std::cout<<KF.errorCovPost <<std::endl;
-
-      //KF.controlMatrix
-      std::cout<<"My State Prediction:" <<std::endl;
-      std::cout<<KF.transitionMatrix*KF.statePost<<std::endl;
-      std::cout<<"My Cov Prediction:" <<std::endl;
-      std::cout<<KF.transitionMatrix*KF.errorCovPost*KF.transitionMatrix.t()+KF.processNoiseCov<<std::endl;
 
       cv::Mat prediction = KF.predict();
       cv::Point predictPt(prediction.at<float>(0),prediction.at<float>(1));
 
-      std::cout<<"OpenCV Prediction:" <<std::endl;
+      // perform measurement every three loops
+      if(i%9 == 0){
+        // take new measurements+noise
+        measurement(0) = mouse_info.x+multivariateNormalDistribution()(0,0);
+        measurement(1) = mouse_info.y+multivariateNormalDistribution()(1,0);
+        cv::Point newGroundTruth(mouse_info.x,mouse_info.y);
+        groundTruth.push_back(newGroundTruth);
+        measPt = cv::Point(measurement(0),measurement(1));
+        measurmens.push_back(measPt);
 
-      std::cout<<"State Prior:" <<std::endl;
-      std::cout<<KF.statePre <<std::endl;
+        estimated = KF.correct(measurement);
+        statePt = cv::Point(estimated.at<float>(0), estimated.at<float>(1));
+        kalmanv.push_back(statePt);
+      }else{
+        // take measurement for display purposes only, do not give to kf
+        cv::Point newGroundTruth(mouse_info.x,mouse_info.y);
+        groundTruth.push_back(newGroundTruth);
 
-      std::cout<<"OpenCV Cov Prior:" <<std::endl;
-      std::cout<<KF.errorCovPre <<std::endl;
+        //http://opencv-users.1802565.n2.nabble.com/Kalman-filters-and-missing-measurements-td2886593.html
+        KF.errorCovPre.copyTo(KF.errorCovPost);
+        KF.statePre.copyTo(KF.statePost);
+      }
 
-      measurement(0) = mouse_info.x+multivariateNormalDistribution()(0,0);
-      measurement(1) = mouse_info.y+multivariateNormalDistribution()(1,0);
-
-      cv::Point newGroundTruth(mouse_info.x,mouse_info.y);
-      groundTruth.push_back(newGroundTruth);
-
-      std::cout<<"Ground Truth:" <<std::endl;
-      std::cout<< mouse_info.x<<" , "<<mouse_info.y <<std::endl;
-
-      cv::Point measPt(measurement(0),measurement(1));
-      measurmens.push_back(measPt);
-
-      cv::Mat estimated = KF.correct(measurement);
-      cv::Point statePt(estimated.at<float>(0),estimated.at<float>(1));
-      kalmanv.push_back(statePt);
-
-      std::cout<<"My State Posterior:" <<std::endl;
-      std::cout<<KF.statePre+KF.gain*(measurement-KF.measurementMatrix*KF.statePre) <<std::endl;
-
-      std::cout<<"My Cov Posterior:" <<std::endl;
-      std::cout<<(cv::Mat::eye(4,4, CV_32F) - KF.gain*KF.measurementMatrix)*KF.errorCovPre <<std::endl;
-
-      std::cout<<"Opencv State Posterior:" <<std::endl;
-      std::cout<<KF.statePost <<std::endl;
-
-      std::cout<<"Opencv Cov Posterior:" <<std::endl;
-      std::cout<<KF.errorCovPost <<std::endl;
-
-      std::cout<<"-----------------------------------------------" <<std::endl;
-      multivariateNormalDistribution();
+      i++;
 
       img = cv::Scalar::all(0);
       drawCross( statePt, cv::Scalar(255,255,255), 5 );
       drawCross( measPt, cv::Scalar(0,0,255), 5 );
-      std::cout << "ground truth size" << groundTruth.size() << std::endl;
+      drawCross( predictPt, cv::Scalar(255,0,255), 5 );
 
       for (std::size_t i = 0; i < groundTruth.size()-1; i++){
           line(img, groundTruth[i], groundTruth[i+1], cv::Scalar(0,255,0), 1);
@@ -219,54 +188,33 @@ int main (int argc, char * const argv[]) {
           line(img, measurmens[i], measurmens[i+1], cv::Scalar(0,255,255), 1);
       }
 
-      if(measurmens.size() > 300){
+      if(groundTruth.size() > 300){
         measurmens.clear();
         kalmanv.clear();
         groundTruth.clear();
+        i = 9;
       }
 
-      cv::putText(img,"Noisy Measurements",cv::Point(10,10),cv::FONT_HERSHEY_PLAIN,1,cv::Scalar(0,255,255) 	);
-      cv::putText(img,"Real Mouse Position(ground truth)",cv::Point(10,25),cv::FONT_HERSHEY_PLAIN,1,cv::Scalar(0,255,0));
-      cv::putText(img,"Kalman Sate",cv::Point(10,35),cv::FONT_HERSHEY_PLAIN,1,cv::Scalar(255,0,0));
-      imshow( "Mouse Tracking with Kalman Filter", img );
+      int line_text = 10;
+      cv::putText(img,"- Measurements + noise", cv::Point(10,line_text), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,255));
+      cv::putText(img,"- Ground truth", cv::Point(10,line_text += 15), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0));
+      cv::putText(img,"- Kalman state", cv::Point(10,line_text += 15), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255,0,0));
+      cv::putText(img,"X = State", cv::Point(10,line_text += 15), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255,255,255));
+      cv::putText(img,"X = Measured", cv::Point(10,line_text += 15), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255));
+      cv::putText(img,"X = Predicted", cv::Point(10,line_text += 15), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255,0,255));
+      imshow( "Mouse Tracker with Kalman Filter", img );
       code = (char)cv::waitKey(1000.0*delta_t);
 
-      if( code == 27 || code == 'q' || code == 'Q' ){
+      if( code == 27 || code == 'q' || code == 'Q' || code == 33 ){
         break;
       }
 
     }
 
-    if( code == 27 || code == 'q' || code == 'Q' ){
+    if( code == 27 || code == 'q' || code == 'Q' || code == 33 ){
       break;
     }
     
   }
-
-  std::ofstream groundTruthfile("groundTruth.csv",std::ofstream::ate );
-  groundTruthfile<<"x,y"<<std::endl;
-
-  for (std::size_t i = 0; i < groundTruth.size(); i++){
-    groundTruthfile<<groundTruth[i].x << ","<<groundTruth[i].y <<std::endl;
-  }
-
-  groundTruthfile.close();
-  std::ofstream kalmanvfile("kalmanv.csv",std::ofstream::ate );
-  kalmanvfile<<"x,y"<<std::endl;
-
-  for (std::size_t i = 0; i < kalmanv.size()-1; i++){
-    kalmanvfile<<kalmanv[i].x << ","<<kalmanv[i].y <<std::endl;
-  }
-
-  kalmanvfile.close();
-  std::ofstream measurmensfile("measurmens.csv",std::ofstream::ate );
-  measurmensfile<<"x,y"<<std::endl;
-
-  for (std::size_t i = 0; i < kalmanv.size()-1; i++){
-    measurmensfile<<measurmens[i].x << ","<<measurmens[i].y <<std::endl;
-  }
-
-  measurmensfile.close();
-  std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" <<std::endl;
   return 0;
 }
