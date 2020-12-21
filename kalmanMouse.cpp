@@ -43,43 +43,7 @@ std::ostream &operator<<(std::ostream &stream,  const std::chrono::time_point<Cl
 }
  
 auto start = std::chrono::high_resolution_clock::now();
-int k=5;
- 
-Eigen::MatrixXd multivariateNormalDistribution(){
-
-  int size = 2; // Dimensionality (rows)
-  int nn=1;     // How many samples (columns) to draw
-  Eigen::internal::scalar_normal_dist_op<double> randN; // Gaussian functor
-  auto elapsed = std::chrono::high_resolution_clock::now() - start;
-  auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-  Eigen::internal::scalar_normal_dist_op<double>::rng.seed(microseconds);
-  Eigen::VectorXd mean(size);
-  Eigen::MatrixXd covar(size,size);
-
-  mean  <<  0,  0;
-  covar <<  k*1e-0, 0,
-      0,  k*1e-0;
-
-  Eigen::MatrixXd normTransform(size,size);
-  Eigen::LLT<Eigen::MatrixXd> cholSolver(covar);
-
-  // We can only use the cholesky decomposition if
-  // the covariance matrix is symmetric, pos-definite.
-  // But a covariance matrix might be pos-semi-definite.
-  // In that case, we'll go to an EigenSolver
-  if (cholSolver.info()==Eigen::Success){
-  // Use cholesky solver
-    normTransform = cholSolver.matrixL();
-  }
-  else{
-    // Use eigen solver
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(covar);
-    normTransform = eigenSolver.eigenvectors() * eigenSolver.eigenvalues().cwiseSqrt().asDiagonal();
-  }
- 
-  Eigen::MatrixXd samples = (normTransform * Eigen::MatrixXd::NullaryExpr(size,nn,randN)).colwise() + mean;
-  return samples;
-}
+int k=3;
  
 struct mouse_info_struct { int x,y; };
 struct mouse_info_struct mouse_info = {-1,-1}, last_mouse;
@@ -111,7 +75,8 @@ int main (int argc, char * const argv[]) {
   cv::Mat processNoise(4, 1, CV_32F);
   cv::Mat_<float> measurement(2,1); measurement.setTo(cv::Scalar(0));
   char code = (char)-1;
-  int i = 9;
+  int skip_m = 6;
+  int i = skip_m;
 
   cv::namedWindow("Mouse Tracker with Kalman Filter");
   cv::setMouseCallback("Mouse Tracker with Kalman Filter", on_mouse, nullptr);
@@ -148,11 +113,11 @@ int main (int argc, char * const argv[]) {
       cv::Mat prediction = KF.predict();
       cv::Point predictPt(prediction.at<float>(0),prediction.at<float>(1));
 
-      // perform measurement every three loops
-      if(i%9 == 0){
+      // perform measurement every x loops
+      if(i%skip_m == 0){
         // take new measurements+noise
-        measurement(0) = mouse_info.x+multivariateNormalDistribution()(0,0);
-        measurement(1) = mouse_info.y+multivariateNormalDistribution()(1,0);
+        measurement(0) = mouse_info.x;
+        measurement(1) = mouse_info.y;
         cv::Point newGroundTruth(mouse_info.x,mouse_info.y);
         groundTruth.push_back(newGroundTruth);
         measPt = cv::Point(measurement(0),measurement(1));
@@ -192,7 +157,7 @@ int main (int argc, char * const argv[]) {
         measurmens.clear();
         kalmanv.clear();
         groundTruth.clear();
-        i = 9;
+        i = skip_m;
       }
 
       int line_text = 10;

@@ -41,7 +41,7 @@ int main (int argc, char * const argv[]) {
   cv::Mat img(500, 500, CV_8UC3);
   cv::KalmanFilter KF(4, 2, 0); // (x, y, Vx, Vy) 
   cv::Mat_<float> state(4, 1); 
-  cv::Mat processNoise(4, 1, CV_32F);
+  cv::Mat processNoise(4, 4, CV_32F);
   cv::Mat_<float> measurement(2,1); measurement.setTo(cv::Scalar(0));
   char code = (char)-1;
   int i = 9;

@@ -25,8 +25,10 @@ include_directories(${OpenCV_INCLUDE_DIRS}
 add_executable(kalman kalman.cpp)                    
 add_executable(kalmanMouse kalmanMouse.cpp)
 add_executable(extendedKalmanMouse extendedKalmanMouse.cpp)
+add_executable(unscentedKalman unscentedKalman.cpp)
 
 target_link_libraries(kalman ${OpenCV_LIBS})
 target_link_libraries(kalmanMouse ${OpenCV_LIBS})
 target_link_libraries(extendedKalmanMouse ${OpenCV_LIBS})
+target_link_libraries(unscentedKalman ${OpenCV_LIBS})
 
